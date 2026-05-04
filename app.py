@@ -2,6 +2,8 @@ import dash
 from dash import dcc, html, Input, Output
 import plotly.express as px
 import pandas as pd
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 app = dash.Dash(__name__)
 
@@ -15,6 +17,8 @@ metric_options = [
     {'label': 'Gross Profit',     'value': 'Gross Profit'},
     {'label': 'Operating Income', 'value': 'Operating Income'},
 ]
+
+ticker_options = [{'label': sym, 'value': sym} for sym in sorted(df_prices['symbol'].unique())]
 
 # -------------------------------------------------------
 # Layout
@@ -44,8 +48,29 @@ app.layout = html.Div(children=[
 
     # -------------------------------------------------------
     # CHART 2 
+    # Question: How did a stock's price and trading volume move together throughout 2015?
     # -------------------------------------------------------
+    
+    html.Div(children=[
+        html.H2("Stock Price & Volume Trend (2015)"),
+        html.P(
+            "Select a ticker to view its daily closing price alongside trading volume. "
+            "Volume spikes often signal key market events — use this to spot momentum "
+            "shifts and regime changes at a glance."
+        ),
 
+        #dropdown to filter which stock to select from all the stock options
+        dcc.Dropdown(
+            id='chart2-dropdown',
+            #gets the unique stocks, declared at the top
+            options=ticker_options,
+            #defaulted to AAPL
+            value='AAPL',
+            style={'width': '300px', 'marginBottom': '10px'}
+        ),
+        #graph component to be updated
+        dcc.Graph(id='chart2-graph'),
+    ], style={'marginBottom': '50px'}),
 
     # -------------------------------------------------------
     # CHART 3 
@@ -87,7 +112,108 @@ def update_chart1(selected_metric):
 # -------------------------------------------------------
 # CHART 2 Callback 
 # -------------------------------------------------------
-
+@app.callback(
+    Output('chart2-graph', 'figure'),
+    Input('chart2-dropdown', 'value'),
+)
+def update_chart2(selected_symbol):
+    #filter the df for the selected tickers and ensure they are in order
+    stock = df_prices[df_prices['symbol'] == selected_symbol].sort_values('date')
+ 
+    #ploty subplot
+    #dual-axis subplot: price on top, volume on bottom
+    fig = make_subplots(
+        rows=2, cols=1,
+        #syncs zooming for both graphs
+        shared_xaxes=True,
+        #equal height for both price and volume
+        row_heights=[0.5, 0.5],
+        #reduce gap
+        vertical_spacing=0.05,
+    )
+ 
+    #high-low trading range -- "cloud" in trading terms
+    #first trace -- top boundary
+    fig.add_trace(
+        go.Scatter(
+            x=stock['date'],
+            y=stock['high'],
+            mode='lines',
+            #invisible line
+            line=dict(width=0),
+            showlegend=False,
+            hoverinfo='skip',
+        ),
+        row=1, col=1
+    )
+    #second trace -- bottom boundary
+    #filled to the 'next y' --> top boundary
+    fig.add_trace(
+        go.Scatter(
+            x=stock['date'],
+            y=stock['low'],
+            mode='lines',
+            line=dict(width=0),
+            #create shaded area
+            fill='tonexty',
+            #color is light blue
+            fillcolor='rgba(99, 162, 222, 0.2)',
+            name='High–Low Range',
+            hoverinfo='skip',
+        ),
+        row=1, col=1
+    )
+    #price chart should show the closing price line
+    fig.add_trace(
+        go.Scatter(
+            x=stock['date'],
+            y=stock['close'],
+            mode='lines',
+            line=dict(color='#2563EB', width=2),
+            name='Close Price',
+            #show the price on hover
+            hovertemplate='%{x|%b %d}<br>Close: $%{y:.2f}<extra></extra>',
+        ),
+        row=1, col=1
+    )
+ 
+    #volume bars
+    #green when price closed higher than opened
+    #red for lower than opened
+    colors = [
+        '#16a34a' if c >= o else '#dc2626'
+        for c, o in zip(stock['close'], stock['open'])
+    ]
+    #candlestick chart
+    fig.add_trace(
+        go.Bar(
+            x=stock['date'],
+            y=stock['volume'],
+            marker_color=colors,
+            name='Volume',
+            #same hover logic
+            hovertemplate='%{x|%b %d}<br>Volume: %{y:,.0f}<extra></extra>',
+            opacity=0.75,
+        ),
+        row=2, col=1
+    )
+    
+    #global adjustment
+    fig.update_layout(
+        title=f"{selected_symbol} — Daily Close Price & Volume (2015)",
+        template='simple_white',
+        #all data for a specific date
+        hovermode='x unified',
+        legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1),
+        margin=dict(l=60, r=20, t=60, b=40),
+        height=520,
+    )
+    #label axes
+    fig.update_yaxes(title_text='Price (USD)', row=1, col=1)
+    fig.update_yaxes(title_text='Volume', row=2, col=1)
+    fig.update_xaxes(title_text='Date', row=2, col=1)
+ 
+    return fig
 
 # -------------------------------------------------------
 # CHART 3 Callback 
