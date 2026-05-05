@@ -81,7 +81,7 @@ app.layout = html.Div(children=[
 
     html.Div(children=[
         html.H2("Stock Metric Relationships (2015)"),
-        html.P("Select any two features to view their relationship with each other."),
+        html.P("Select any two features to view their relationship with each other across all countries."),
         dcc.Dropdown(
             id='chart3-dropdown-x',
             options=[{'label': col, 'value': col} for col in numerical_cols],
@@ -249,6 +249,7 @@ def update_chart3(selected_x, selected_y):
         df,
         x=selected_x,
         y=selected_y,
+        color='Country',
         title=f"{selected_x} vs. {selected_y}",
         template='simple_white'
     )
