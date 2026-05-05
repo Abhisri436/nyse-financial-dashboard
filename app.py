@@ -24,6 +24,28 @@ numerical_cols = df.select_dtypes(include=['int64', 'float64']).columns.tolist()
 numerical_cols.remove('For Year')
 numerical_cols.remove('CIK')
 
+# Options for Chart 4 dropdowns
+sector_options = [
+    {'label': sector, 'value': sector}
+    for sector in sorted(df['GICS Sector'].dropna().unique())
+]
+
+ranking_metric_options = [
+    {'label': 'Net Income', 'value': 'Net Income'},
+    {'label': 'Total Revenue', 'value': 'Total Revenue'},
+    {'label': 'Gross Profit', 'value': 'Gross Profit'},
+    {'label': 'Operating Income', 'value': 'Operating Income'},
+    {'label': 'Profit Margin', 'value': 'Profit Margin'},
+    {'label': 'Operating Margin', 'value': 'Operating Margin'},
+    {'label': 'Gross Margin', 'value': 'Gross Margin'},
+]
+
+rank_order_options = [
+    {'label': 'Top 10', 'value': 'top'},
+    {'label': 'Bottom 10', 'value': 'bottom'},
+]
+
+
 # -------------------------------------------------------
 # Layout
 # -------------------------------------------------------
@@ -54,7 +76,6 @@ app.layout = html.Div(children=[
     # CHART 2 
     # Question: How did a stock's price and trading volume move together throughout 2015?
     # -------------------------------------------------------
-    
     html.Div(children=[
         html.H2("Stock Price & Volume Trend (2015)"),
         html.P(
@@ -79,7 +100,6 @@ app.layout = html.Div(children=[
     # -------------------------------------------------------
     # CHART 3 
     # -------------------------------------------------------
-
     html.Div(children=[
         html.H2("Stock Metric Relationships (2015)"),
         html.P("Select any two features to view their relationship with each other across all countries."),
@@ -100,7 +120,41 @@ app.layout = html.Div(children=[
 
     # -------------------------------------------------------
     # CHART 4
+    # Question: Within a selected sector, which companies rank highest or lowest on a chosen metric?
     # -------------------------------------------------------
+    html.Div(children=[
+        html.H2("Company Ranking Within Selected Sector (2015)"),
+        html.P(
+            "Select a sector and metric to rank companies within that sector. "
+            "This helps compare which companies lead or lag on key financial measures."
+        ),
+
+        html.Div([
+            dcc.Dropdown(
+                id='chart4-sector-dropdown',
+                options=sector_options,
+                value=sorted(df['GICS Sector'].dropna().unique())[0],
+                style={'width': '300px', 'marginRight': '15px'}
+            ),
+
+            dcc.Dropdown(
+                id='chart4-metric-dropdown',
+                options=ranking_metric_options,
+                value='Net Income',
+                style={'width': '300px', 'marginRight': '15px'}
+            ),
+
+            dcc.RadioItems(
+                id='chart4-rank-order',
+                options=rank_order_options,
+                value='top',
+                inline=True,
+                style={'marginTop': '10px'}
+            ),
+        ], style={'display': 'flex', 'alignItems': 'center', 'gap': '10px', 'marginBottom': '15px'}),
+
+        dcc.Graph(id='chart4-graph'),
+    ], style={'marginBottom': '50px'}),
 
 ])
 
@@ -239,7 +293,6 @@ def update_chart2(selected_symbol):
 # -------------------------------------------------------
 # CHART 3 Callback 
 # -------------------------------------------------------
-
 @app.callback(
     Output('chart3-graph', 'figure'),
     [Input('chart3-dropdown-x', 'value'),
@@ -259,7 +312,52 @@ def update_chart3(selected_x, selected_y):
 # -------------------------------------------------------
 # CHART 4 Callback 
 # -------------------------------------------------------
+@app.callback(
+    Output('chart4-graph', 'figure'),
+    [
+        Input('chart4-sector-dropdown', 'value'),
+        Input('chart4-metric-dropdown', 'value'),
+        Input('chart4-rank-order', 'value')
+    ]
+)
+def update_chart4(selected_sector, selected_metric, rank_order):
+    # Filter to the selected sector
+    filtered_df = df[df['GICS Sector'] == selected_sector].copy()
 
+    # Keep only rows with valid values for the chosen metric and company name
+    filtered_df = filtered_df.dropna(subset=[selected_metric, 'Security'])
+
+    # Sort and select top or bottom 10
+    if rank_order == 'top':
+        ranked_df = filtered_df.sort_values(selected_metric, ascending=False).head(10)
+        chart_title = f"Top 10 Companies in {selected_sector} by {selected_metric} (2015)"
+    else:
+        ranked_df = filtered_df.sort_values(selected_metric, ascending=True).head(10)
+        ranked_df = ranked_df.iloc[::-1]
+        chart_title = f"Bottom 10 Companies in {selected_sector} by {selected_metric} (2015)"
+
+
+    fig = px.bar(
+        ranked_df,
+        x=selected_metric,
+        y='Security',
+        orientation='h',
+        color='Security',
+        title=chart_title,
+        template='simple_white',
+        labels={
+            selected_metric: selected_metric,
+            'Security': 'Company'
+        }
+    )
+
+    fig.update_layout(
+        showlegend=False,
+        margin=dict(l=80, r=20, t=60, b=40),
+        height=550
+    )
+
+    return fig
 
 if __name__ == '__main__':
     app.run(debug=True)
