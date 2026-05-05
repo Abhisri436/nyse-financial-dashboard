@@ -49,113 +49,101 @@ rank_order_options = [
 # -------------------------------------------------------
 # Layout
 # -------------------------------------------------------
-app.layout = html.Div(children=[
+app.layout = html.Div(className='dashboard-wrapper', children=[
 
-    html.H1("NYSE S&P 500 Financial Dashboard (2015)",
-            style={'textAlign': 'center', 'marginBottom': '30px'}),
+    html.H1("NYSE S&P 500 Financial Dashboard (2015)", className='dashboard-title'),
 
-    # -------------------------------------------------------
-    # CHART 1 - Sector Profitability
-    # Question: Which sectors generate the most profit/revenue?
-    # -------------------------------------------------------
-    html.Div(children=[
-        html.H2("Sector Profitability Overview"),
-        html.P("Select a financial metric to compare average performance across S&P 500 sectors."),
+    html.Div(className='charts-grid', children=[
 
-        dcc.Dropdown(
-            id='chart1-dropdown',
-            options=metric_options,
-            value='Net Income',
-            style={'width': '300px', 'marginBottom': '10px'}
-        ),
-
-        dcc.Graph(id='chart1-graph'),
-    ], style={'marginBottom': '50px'}),
-
-    # -------------------------------------------------------
-    # CHART 2 
-    # Question: How did a stock's price and trading volume move together throughout 2015?
-    # -------------------------------------------------------
-    html.Div(children=[
-        html.H2("Stock Price & Volume Trend (2015)"),
-        html.P(
-            "Select a ticker to view its daily closing price alongside trading volume. "
-            "Volume spikes often signal key market events — use this to spot momentum "
-            "shifts and regime changes at a glance."
-        ),
-
-        #dropdown to filter which stock to select from all the stock options
-        dcc.Dropdown(
-            id='chart2-dropdown',
-            #gets the unique stocks, declared at the top
-            options=ticker_options,
-            #defaulted to AAPL
-            value='AAPL',
-            style={'width': '300px', 'marginBottom': '10px'}
-        ),
-        #graph component to be updated
-        dcc.Graph(id='chart2-graph'),
-    ], style={'marginBottom': '50px'}),
-
-    # -------------------------------------------------------
-    # CHART 3 
-    # -------------------------------------------------------
-    html.Div(children=[
-        html.H2("Stock Metric Relationships (2015)"),
-        html.P("Select any two features to view their relationship with each other across all countries."),
-        dcc.Dropdown(
-            id='chart3-dropdown-x',
-            options=[{'label': col, 'value': col} for col in numerical_cols],
-            value='Total Revenue',
-            style={'width': '300px', 'marginBottom': '10px'}    
-        ),
-         dcc.Dropdown(
-            id='chart3-dropdown-y',
-            options=[{'label': col, 'value': col} for col in numerical_cols],
-            value='Net Income',
-            style={'width': '300px', 'marginBottom': '10px'}    
-        ),
-        dcc.Graph(id='chart3-graph'),
-    ], style={'marginBottom': '50px'}),
-
-    # -------------------------------------------------------
-    # CHART 4
-    # Question: Within a selected sector, which companies rank highest or lowest on a chosen metric?
-    # -------------------------------------------------------
-    html.Div(children=[
-        html.H2("Company Ranking Within Selected Sector (2015)"),
-        html.P(
-            "Select a sector and metric to rank companies within that sector. "
-            "This helps compare which companies lead or lag on key financial measures."
-        ),
-
-        html.Div([
+        # -------------------------------------------------------
+        # CHART 1 - Sector Profitability
+        # -------------------------------------------------------
+        html.Div(className='chart-card', children=[
+            html.H2("Sector Profitability Overview"),
+            html.P("Select a financial metric to compare average performance across S&P 500 sectors."),
             dcc.Dropdown(
-                id='chart4-sector-dropdown',
-                options=sector_options,
-                value=sorted(df['GICS Sector'].dropna().unique())[0],
-                style={'width': '300px', 'marginRight': '15px'}
-            ),
-
-            dcc.Dropdown(
-                id='chart4-metric-dropdown',
-                options=ranking_metric_options,
+                id='chart1-dropdown',
+                options=metric_options,
                 value='Net Income',
-                style={'width': '300px', 'marginRight': '15px'}
+                style={'width': '300px', 'marginBottom': '10px'}
             ),
+            dcc.Graph(id='chart1-graph'),
+        ]),
 
-            dcc.RadioItems(
-                id='chart4-rank-order',
-                options=rank_order_options,
-                value='top',
-                inline=True,
-                style={'marginTop': '10px'}
+        # -------------------------------------------------------
+        # CHART 2 - Stock Price & Volume
+        # -------------------------------------------------------
+        html.Div(className='chart-card', children=[
+            html.H2("Stock Price & Volume Trend (2015)"),
+            html.P(
+                "Select a ticker to view its daily closing price alongside trading volume. "
+                "Volume spikes often signal key market events — use this to spot momentum "
+                "shifts and regime changes at a glance."
             ),
-        ], style={'display': 'flex', 'alignItems': 'center', 'gap': '10px', 'marginBottom': '15px'}),
+            dcc.Dropdown(
+                id='chart2-dropdown',
+                options=ticker_options,
+                value='AAPL',
+                style={'width': '300px', 'marginBottom': '10px'}
+            ),
+            dcc.Graph(id='chart2-graph'),
+        ]),
 
-        dcc.Graph(id='chart4-graph'),
-    ], style={'marginBottom': '50px'}),
+        # -------------------------------------------------------
+        # CHART 3 - Scatter Plot
+        # -------------------------------------------------------
+        html.Div(className='chart-card', children=[
+            html.H2("Stock Metric Relationships (2015)"),
+            html.P("Select any two features to view their relationship with each other across all countries."),
+            dcc.Dropdown(
+                id='chart3-dropdown-x',
+                options=[{'label': col, 'value': col} for col in numerical_cols],
+                value='Total Revenue',
+                style={'width': '300px', 'marginBottom': '10px'}
+            ),
+            dcc.Dropdown(
+                id='chart3-dropdown-y',
+                options=[{'label': col, 'value': col} for col in numerical_cols],
+                value='Net Income',
+                style={'width': '300px', 'marginBottom': '10px'}
+            ),
+            dcc.Graph(id='chart3-graph'),
+        ]),
 
+        # -------------------------------------------------------
+        # CHART 4 - Company Ranking
+        # -------------------------------------------------------
+        html.Div(className='chart-card', children=[
+            html.H2("Company Ranking Within Selected Sector (2015)"),
+            html.P(
+                "Select a sector and metric to rank companies within that sector. "
+                "This helps compare which companies lead or lag on key financial measures."
+            ),
+            html.Div([
+                dcc.Dropdown(
+                    id='chart4-sector-dropdown',
+                    options=sector_options,
+                    value=sorted(df['GICS Sector'].dropna().unique())[0],
+                    style={'width': '300px', 'marginRight': '15px'}
+                ),
+                dcc.Dropdown(
+                    id='chart4-metric-dropdown',
+                    options=ranking_metric_options,
+                    value='Net Income',
+                    style={'width': '300px', 'marginRight': '15px'}
+                ),
+                dcc.RadioItems(
+                    id='chart4-rank-order',
+                    options=rank_order_options,
+                    value='top',
+                    inline=True,
+                    style={'marginTop': '10px'}
+                ),
+            ], style={'display': 'flex', 'alignItems': 'center', 'gap': '10px', 'marginBottom': '15px'}),
+            dcc.Graph(id='chart4-graph'),
+        ]),
+
+    ]),
 ])
 
 # -------------------------------------------------------
@@ -169,18 +157,22 @@ def update_chart1(selected_metric):
     sector_avg = df.groupby('GICS Sector')[selected_metric].mean().reset_index()
     sector_avg = sector_avg.sort_values(selected_metric, ascending=False)
 
+    median_val = sector_avg[selected_metric].median()
+    sector_avg['above_median'] = sector_avg[selected_metric] >= median_val
+
     fig = px.bar(
         sector_avg,
         x='GICS Sector',
         y=selected_metric,
+        color='above_median',
+        color_discrete_map={True: '#2563EB', False: '#93c5fd'},
         title=f"Average {selected_metric} by Sector (2015)",
-        labels={'GICS Sector': 'Sector', selected_metric: f'Avg {selected_metric} (USD)'},
+        labels={'GICS Sector': 'Sector', selected_metric: f'Avg {selected_metric} (USD)', 'above_median': 'Above Median'},
         template='simple_white',
-        color='GICS Sector',
     )
     fig.update_layout(
         xaxis_tickangle=-30,
-        showlegend=False,
+        legend_title_text='Above Median',
     )
     return fig
 
@@ -304,6 +296,7 @@ def update_chart3(selected_x, selected_y):
         x=selected_x,
         y=selected_y,
         color='Country',
+        opacity=0.5,
         title=f"{selected_x} vs. {selected_y}",
         template='simple_white'
     )
@@ -337,22 +330,27 @@ def update_chart4(selected_sector, selected_metric, rank_order):
         chart_title = f"Bottom 10 Companies in {selected_sector} by {selected_metric} (2015)"
 
 
+    median_val = ranked_df[selected_metric].median()
+    ranked_df['above_median'] = ranked_df[selected_metric] >= median_val
+
     fig = px.bar(
         ranked_df,
         x=selected_metric,
         y='Security',
         orientation='h',
-        color='Security',
+        color='above_median',
+        color_discrete_map={True: '#2563EB', False: '#93c5fd'},
         title=chart_title,
         template='simple_white',
         labels={
             selected_metric: selected_metric,
-            'Security': 'Company'
+            'Security': 'Company',
+            'above_median': 'Above Median'
         }
     )
 
     fig.update_layout(
-        showlegend=False,
+        legend_title_text='Above Median',
         margin=dict(l=80, r=20, t=60, b=40),
         height=550
     )
