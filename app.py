@@ -22,6 +22,7 @@ ticker_options = [{'label': sym, 'value': sym} for sym in sorted(df_prices['symb
 
 numerical_cols = df.select_dtypes(include=['int64', 'float64']).columns.tolist()
 numerical_cols.remove('For Year')
+numerical_cols.remove('CIK')
 
 # -------------------------------------------------------
 # Layout
