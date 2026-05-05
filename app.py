@@ -20,6 +20,9 @@ metric_options = [
 
 ticker_options = [{'label': sym, 'value': sym} for sym in sorted(df_prices['symbol'].unique())]
 
+numerical_cols = df.select_dtypes(include=['int64', 'float64']).columns.tolist()
+numerical_cols.remove('For Year')
+
 # -------------------------------------------------------
 # Layout
 # -------------------------------------------------------
@@ -76,6 +79,23 @@ app.layout = html.Div(children=[
     # CHART 3 
     # -------------------------------------------------------
 
+    html.Div(children=[
+        html.H2("Stock Metric Relationships (2015)"),
+        html.P("Select any two features to view their relationship with each other."),
+        dcc.Dropdown(
+            id='chart3-dropdown-x',
+            options=[{'label': col, 'value': col} for col in numerical_cols],
+            value='Total Revenue',
+            style={'width': '300px', 'marginBottom': '10px'}    
+        ),
+         dcc.Dropdown(
+            id='chart3-dropdown-y',
+            options=[{'label': col, 'value': col} for col in numerical_cols],
+            value='Net Income',
+            style={'width': '300px', 'marginBottom': '10px'}    
+        ),
+        dcc.Graph(id='chart3-graph'),
+    ], style={'marginBottom': '50px'}),
 
     # -------------------------------------------------------
     # CHART 4
@@ -219,6 +239,20 @@ def update_chart2(selected_symbol):
 # CHART 3 Callback 
 # -------------------------------------------------------
 
+@app.callback(
+    Output('chart3-graph', 'figure'),
+    [Input('chart3-dropdown-x', 'value'),
+     Input('chart3-dropdown-y', 'value')]
+)
+def update_chart3(selected_x, selected_y):
+    fig = px.scatter(
+        df,
+        x=selected_x,
+        y=selected_y,
+        title=f"{selected_x} vs. {selected_y}",
+        template='simple_white'
+    )
+    return fig
 
 # -------------------------------------------------------
 # CHART 4 Callback 
