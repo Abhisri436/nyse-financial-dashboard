@@ -296,6 +296,7 @@ def update_chart3(selected_x, selected_y):
         x=selected_x,
         y=selected_y,
         color='Country',
+        hover_name='Ticker Symbol',
         opacity=0.5,
         title=f"{selected_x} vs. {selected_y}",
         template='simple_white'
